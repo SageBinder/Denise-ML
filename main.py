@@ -3,7 +3,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-
+#SAGGI IS F I L T H Y
 print(tf.__version__)
 
 learning_rate = 0.004
@@ -21,7 +21,7 @@ max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-x_total, y_total = ml.parse_full_data('C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\greyscale_data.mat')
+x_total, y_total = ml.parse_full_data('C:\\Users\\special023\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\training_mat_data\\greyscale_data.mat')
 (m, n_H, n_W, n_C) = x_total.shape
 
 c = list(zip(x_total, y_total))
