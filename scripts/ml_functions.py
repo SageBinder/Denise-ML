@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import scipy.io
 
 
 def create_placeholders(n_h, n_w, n_c, n_y):
@@ -42,14 +43,30 @@ def get_cost(z, y_true):
            + sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
 
-def parse_full_data(file_path):
+def parse_full_data_greyscale(file_path):
     mat = np.loadtxt(file_path)
     x = []
     y = []
     for image in mat:
         x.append(np.reshape(image[0:-1], (100, 100, 1)))
         y.append(int(image[-1]) - 1)
+    print(y)
+    y_one_hot = np.zeros((len(y), 4))
+    y_one_hot[np.arange(len(y)), y] = 1
 
+    return np.array(x), np.array(y_one_hot)
+
+
+def parse_full_data_rgb(x_file_path, y_file_path):
+    x_mat = np.loadtxt(x_file_path)
+    y_mat = np.loadtxt(y_file_path)
+    x = []
+    y = []
+    for image in x_mat:
+        x.append(np.reshape(image, (200, 200, 3)))
+    for val in y_mat:
+        y.append(int(val) - 1)
+    print(y)
     y_one_hot = np.zeros((len(y), 4))
     y_one_hot[np.arange(len(y)), y] = 1
 

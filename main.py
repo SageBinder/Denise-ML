@@ -6,13 +6,13 @@ import random
 
 print(tf.__version__)
 
-learning_rate = 0.004
-regularization_coefficient = 0.009
+learning_rate = 0.001
+regularization_coefficient = 0.25
 num_epochs = 300
-kernel_shapes = {"L1": [9, 9, 1, 15],
-                 "L2": [7, 7, 15, 17],
-                 "L3": [5, 5, 17, 19],
-                 "L4": [3, 3, 19, 21]}
+kernel_shapes = {"L1": [9, 9, 3, 17],
+                 "L2": [9, 9, 17, 19],
+                 "L3": [7, 7, 19, 21],
+                 "L4": [3, 3, 21, 23]}
 
 max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
                    "L2": ([1, 5, 5, 1], "SAME"),
@@ -21,7 +21,11 @@ max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-x_total, y_total = ml.parse_full_data('C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\greyscale_data.mat')
+x_total, y_total = ml.parse_full_data_rgb('C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\3d_data.mat',
+                                          'C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\3d_data_yval.mat')
+
+# x_total, y_total = ml.parse_full_data_greyscale('C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\greyscale_data.mat')
+
 (m, n_H, n_W, n_C) = x_total.shape
 
 c = list(zip(x_total, y_total))
@@ -63,7 +67,6 @@ with tf.Session() as sess:
     correct_prediction = tf.equal(predict_op, tf.argmax(Y, axis=1))
 
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    print(accuracy)
     train_accuracy = accuracy.eval({X: x_train, Y: y_train})
     print("Train Accuracy:", train_accuracy)
     test_accuracy = accuracy.eval({X: x_test, Y: y_test})

@@ -4,7 +4,7 @@ import numpy as np
 
 # This script takes the data from greyscale_data.mat and saves the labeled images.
 
-x, y = ml.parse_full_data("C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\greyscale_data.mat")
+x, y = ml.parse_full_data_greyscale("C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\greyscale_data.mat")
 save_path = "C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\out\\labeled_images_from_greyscale_training_data"
 
 i = 0
