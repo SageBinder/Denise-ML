@@ -7,24 +7,24 @@ import random
 print(tf.__version__)
 
 learning_rate = 0.001
-regularization_coefficient = 0.25
-num_epochs = 300
-kernel_shapes = {"L1": [9, 9, 3, 17],
-                 "L2": [9, 9, 17, 19],
-                 "L3": [7, 7, 19, 21],
-                 "L4": [3, 3, 21, 23]}
+regularization_coefficient = 0.01
+num_epochs = 500
+kernel_shapes = {"L1": [13, 13, 1, 17],
+                 "L2": [11, 11, 17, 19],
+                 "L3": [9, 9, 19, 21],
+                 "L4": [7, 7, 21, 23]}
 
 max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
                    "L2": ([1, 5, 5, 1], "SAME"),
-                   "L3": ([1, 1, 1, 1], "SAME"),
-                   "L4": ([1, 2, 2, 1], "SAME")}
+                   "L3": ([1, 3, 3, 1], "SAME"),
+                   "L4": ([1, 3, 3, 1], "SAME")}
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-x_total, y_total = ml.parse_full_data_rgb('C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\3d_data.mat',
-                                          'C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\3d_data_yval.mat')
+#x_total, y_total = ml.parse_full_data_rgb('C:\\Users\\special023\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\training_mat_data\\3d_data.mat',
+#                                         'C:\\Users\\special023\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\training_mat_data\\3d_data_yval.mat')
 
-# x_total, y_total = ml.parse_full_data_greyscale('C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\greyscale_data.mat')
+x_total, y_total = ml.parse_full_data_greyscale('C:\\Users\\special023\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\training_mat_data\\greyscale_200x200.mat')
 
 (m, n_H, n_W, n_C) = x_total.shape
 

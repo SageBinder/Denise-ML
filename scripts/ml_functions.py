@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import scipy.io
+#import scipy.io
 
 
 def create_placeholders(n_h, n_w, n_c, n_y):
@@ -48,7 +48,7 @@ def parse_full_data_greyscale(file_path):
     x = []
     y = []
     for image in mat:
-        x.append(np.reshape(image[0:-1], (100, 100, 1)))
+        x.append(np.reshape(image[0:-1], (200, 200, 1)))
         y.append(int(image[-1]) - 1)
     print(y)
     y_one_hot = np.zeros((len(y), 4))
