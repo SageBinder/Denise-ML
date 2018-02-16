@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-#import scipy.io
 
 
 def create_placeholders(n_h, n_w, n_c, n_y):
@@ -25,8 +24,6 @@ def forward_propagation(x, parameters, max_pool_shapes):
     for layer, w in parameters.items():
         z = tf.nn.conv2d(p, w, strides=[1, 1, 1, 1], padding='SAME')
         a = tf.nn.relu(z)
-        print(max_pool_shapes[layer][1])
-        print(p.shape)
         p = tf.nn.max_pool(a,
                            ksize=max_pool_shapes[layer][0],
                            strides=max_pool_shapes[layer][0],

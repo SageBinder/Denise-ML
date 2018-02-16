@@ -8,7 +8,7 @@ print(tf.__version__)
 
 learning_rate = 0.001
 regularization_coefficient = 0.01
-num_epochs = 500
+num_epochs = 2
 kernel_shapes = {"L1": [13, 13, 1, 17],
                  "L2": [11, 11, 17, 19],
                  "L3": [9, 9, 19, 21],
@@ -19,12 +19,7 @@ max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
                    "L3": ([1, 3, 3, 1], "SAME"),
                    "L4": ([1, 3, 3, 1], "SAME")}
 
-tf.logging.set_verbosity(tf.logging.INFO)
-
-#x_total, y_total = ml.parse_full_data_rgb('C:\\Users\\special023\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\training_mat_data\\3d_data.mat',
-#                                         'C:\\Users\\special023\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\training_mat_data\\3d_data_yval.mat')
-
-x_total, y_total = ml.parse_full_data_greyscale('C:\\Users\\special023\\PycharmProjects\\Denise-ML\\resources\\training_mat_data\\training_mat_data\\greyscale_200x200.mat')
+x_total, y_total = ml.parse_full_data_greyscale('resources//training_mat_data//greyscale_200x200.mat')
 
 (m, n_H, n_W, n_C) = x_total.shape
 
@@ -41,6 +36,7 @@ y_test = y_total[350:]
 X, Y = ml.create_placeholders(n_H, n_W, n_C, 4)
 parameters = ml.initialize_parameters(kernel_shapes, regularization_coefficient)
 Z = ml.forward_propagation(X, parameters, max_pool_shapes)
+Z = tf.identity(Z, name="Z")
 cost = ml.get_cost(Z, Y)
 
 optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
@@ -71,4 +67,7 @@ with tf.Session() as sess:
     print("Train Accuracy:", train_accuracy)
     test_accuracy = accuracy.eval({X: x_test, Y: y_test})
     print("Test Accuracy:", test_accuracy)
+
+    saver = tf.train.Saver()
+    saver.save(sess, '.\\models\\test_save', global_step=0)
 

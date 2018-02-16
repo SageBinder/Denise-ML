@@ -4,8 +4,8 @@ import numpy as np
 
 # This script takes the data from greyscale_data.mat and saves the labeled images.
 
-x, y = ml.parse_full_data_greyscale("C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\resources\\greyscale_data.mat")
-save_path = "C:\\Users\\Sage\\PycharmProjects\\Denise-ML\\out\\labeled_images_from_greyscale_training_data"
+x, y = ml.parse_full_data_greyscale(".\\..\\resources\\training_mat_data\\greyscale_200x200.mat")
+save_path = ".\\..\\out\\labeled_images_from_greyscale_200x200_data"
 
 i = 0
 for image, val in zip(x, y):
@@ -19,6 +19,6 @@ for image, val in zip(x, y):
     elif np.argmax(val) == 3:  # muscular
         type_string = "muscular"
 
-    scipy.misc.toimage(np.reshape(image, (100, 100)), cmin=0, cmax=255)\
+    scipy.misc.toimage(np.reshape(image, (200, 200)), cmin=0, cmax=255)\
         .save(save_path + "\\[" + str(i) + "]" + " type_" + type_string + ".jpg")
     i += 1
