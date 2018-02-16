@@ -8,7 +8,7 @@ print(tf.__version__)
 
 learning_rate = 0.001
 regularization_coefficient = 0.01
-num_epochs = 2
+num_epochs = 500
 kernel_shapes = {"L1": [13, 13, 1, 17],
                  "L2": [11, 11, 17, 19],
                  "L3": [9, 9, 19, 21],
