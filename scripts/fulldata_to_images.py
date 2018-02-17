@@ -5,7 +5,7 @@ import numpy as np
 # This script takes the data from greyscale_data.mat and saves the labeled images.
 
 x, y = ml.parse_full_data_greyscale(".\\..\\resources\\training_mat_data\\greyscale_200x200.mat")
-save_path = ".\\..\\out\\labeled_images_from_greyscale_200x200_data"
+save_path = ".\\..\\out\\greyscale_200x200_labeled"
 
 i = 0
 for image, val in zip(x, y):
