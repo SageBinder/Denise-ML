@@ -47,7 +47,6 @@ def parse_full_data_greyscale(file_path):
     for image in mat:
         x.append(np.reshape(image[0:-1], (200, 200, 1)))
         y.append(int(image[-1]) - 1)
-    print(y)
     y_one_hot = np.zeros((len(y), 4))
     y_one_hot[np.arange(len(y)), y] = 1
 
