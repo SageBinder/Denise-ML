@@ -31,13 +31,13 @@ def forward_propagation(x, parameters, max_pool_shapes):
 
     p = tf.contrib.layers.flatten(p)
 
-    z = tf.contrib.layers.fully_connected(p, 4, activation_fn=None)
+    z = tf.contrib.layers.fully_connected(p, 4, activation_fn=None, name="Z")
     return z
 
 
 def get_cost(z, y_true):
-    return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=z, labels=y_true))\
-           + sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+    return tf.add(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=z, labels=y_true)),
+                  sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)), name="cost")
 
 
 def parse_full_data_greyscale(file_path):
@@ -47,7 +47,6 @@ def parse_full_data_greyscale(file_path):
     for image in mat:
         x.append(np.reshape(image[0:-1], (200, 200, 1)))
         y.append(int(image[-1]) - 1)
-    print(y)
     y_one_hot = np.zeros((len(y), 4))
     y_one_hot[np.arange(len(y)), y] = 1
 
@@ -63,7 +62,6 @@ def parse_full_data_rgb(x_file_path, y_file_path):
         x.append(np.reshape(image, (200, 200, 3)))
     for val in y_mat:
         y.append(int(val) - 1)
-    print(y)
     y_one_hot = np.zeros((len(y), 4))
     y_one_hot[np.arange(len(y)), y] = 1
 
