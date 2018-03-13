@@ -31,7 +31,8 @@ def forward_propagation(x, parameters, max_pool_shapes):
 
     p = tf.contrib.layers.flatten(p)
 
-    z = tf.contrib.layers.fully_connected(p, 4, activation_fn=None, name="Z")
+    z = tf.contrib.layers.fully_connected(p, 4, activation_fn=None)
+    z = tf.identity(z, name="Z")
     return z
 
 
