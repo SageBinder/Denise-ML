@@ -9,6 +9,7 @@ print("Path: " + os.path.abspath("./"))
 
 x_total, y_total = ml.parse_full_data_greyscale(os.path.abspath("resources/training_mat_data/greyscale_200x200.mat"))
 
+random.seed(69)
 c = list(zip(x_total, y_total))
 random.shuffle(c)
 x_total, y_total = zip(*c)
@@ -16,25 +17,29 @@ x_total, y_total = zip(*c)
 x_train = x_total[0:350]
 y_train = y_total[0:350]
 
-image_directory = os.fsencode(os.path.abspath("out/greyscale_200x200_labeled"))
-export_dir = os.path.abspath("models/test_save")
+x_test = x_total[350:]
+y_test = y_total[350:]
+
+image_dir = os.fsencode(os.path.abspath("out/greyscale_200x200_labeled"))
+save_dir = os.path.abspath("models/model-0")
 
 with tf.Session(graph=tf.Graph()) as sess:
-    tf.saved_model.loader.load(sess, [tf.saved_model.tag_constants.TRAINING], export_dir)
+    saver = tf.train.import_meta_graph(save_dir + "/test_save-99.meta")
+    saver.restore(sess, tf.train.latest_checkpoint(save_dir))
     graph = tf.get_default_graph()
+
     X = graph.get_tensor_by_name(name="X:0")
     Y = graph.get_tensor_by_name(name="Y:0")
     Z = graph.get_tensor_by_name(name="Z:0")
     cost = graph.get_tensor_by_name(name="cost:0")
     optimizer = graph.get_operation_by_name(name="optimizer")
+    accuracy = graph.get_tensor_by_name(name="accuracy:0")
 
-    for i in range(5):
-        print("epoch " + str(i))
-        _, temp_cost = sess.run([optimizer, cost], feed_dict={X: x_train, Y: y_train})
-        print("Cost: " + str(temp_cost))
+    print("Test accuracy: " + str(sess.run(accuracy, feed_dict={X: x_test, Y: y_test})))
+    print("Train accuracy: " + str(sess.run(accuracy, feed_dict={X: x_train, Y: y_train})))
 
     i = 0
-    for file in os.listdir(image_directory):
+    for file in os.listdir(image_dir):
         filename = os.fsdecode(file)
         image = scipy.misc.imread(os.path.abspath("out/greyscale_200x200_labeled/" + filename))
 
