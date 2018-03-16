@@ -41,12 +41,12 @@ def get_cost(z, y_true):
                   sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)), name="cost")
 
 
-def parse_full_data_greyscale(file_path):
+def parse_full_data_greyscale(file_path, height, width, channels):
     mat = np.loadtxt(file_path)
     x = []
     y = []
     for image in mat:
-        x.append(np.reshape(image[0:-1], (200, 200, 1)))
+        x.append(np.reshape(image[0:-1], (height, width, channels)))
         y.append(int(image[-1]) - 1)
     y_one_hot = np.zeros((len(y), 4))
     y_one_hot[np.arange(len(y)), y] = 1
@@ -54,16 +54,22 @@ def parse_full_data_greyscale(file_path):
     return np.array(x), np.array(y_one_hot)
 
 
-def parse_full_data_rgb(x_file_path, y_file_path):
-    x_mat = np.loadtxt(x_file_path)
-    y_mat = np.loadtxt(y_file_path)
-    x = []
-    y = []
-    for image in x_mat:
-        x.append(np.reshape(image, (200, 200, 3)))
-    for val in y_mat:
-        y.append(int(val) - 1)
-    y_one_hot = np.zeros((len(y), 4))
-    y_one_hot[np.arange(len(y)), y] = 1
+def prediction_num_to_string(y):
+    if y == 0:  # skeletal
+        return "skeletal"
+    elif y == 1:  # respiratory
+        return "respiratory"
+    elif y == 2:  # neural
+        return "neural"
+    elif y == 3:  # muscular
+        return "muscular"
 
-    return np.array(x), np.array(y_one_hot)
+
+def get_minibatches(x, y, batch_size):
+    m = np.shape(x)[0]
+    assert m == np.shape(y)[0]
+
+    for i in range(0, m - batch_size + 1, batch_size):
+        excerpt = slice(i, i + batch_size)
+        yield x[excerpt], y[excerpt]
+    yield x[m - (m % batch_size):], y[m - (m % batch_size):]

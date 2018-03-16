@@ -6,11 +6,31 @@ import random
 
 print(tf.__version__)
 
-# Hyperparameters:
+# Load dataset ---
+x_total, y_total = ml.parse_full_data_greyscale('resources/training_mat_data/greyscale_with_artificial_200x200.mat'
+                                                , 200, 200, 1)
+(m, n_H, n_W, n_C) = x_total.shape
+# ---
+
+# Shuffle dataset and get train/test subsets ---
+random.seed(69)
+c = list(zip(x_total, y_total))
+random.shuffle(c)
+x_total, y_total = zip(*c)
+
+x_train = x_total[0:int(0.8 * len(x_total))]
+y_train = y_total[0:int(0.8 * len(y_total))]
+# Train/test split is 80/20
+x_test = x_total[int(0.8 * len(x_total)):]
+y_test = y_total[int(0.8 * len(y_total)):]
+# ---
+
+# Hyperparameters ---
 learning_rate = 0.003
 regularization_coefficient = 0.12
-num_epochs = 10  # num_epochs should be a multiple of save_period to
+num_epochs = 2  # num_epochs should be a multiple of save_period to
 # ensure the distance between save points remains constant.
+minibatch_size = 100
 
 kernel_shapes = {"L1": [15, 15, 1, 19],
                  "L2": [9, 9, 19, 21],
@@ -21,35 +41,17 @@ max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
                    "L3": ([1, 3, 3, 1], "SAME")}
 # ---
 
-# Variables for keeping track of training:
+# Variables for keeping track of training ---
 train_accuracies = []
 test_accuracies = []
-save_period = 2
+save_period = 1
 check_acc_period = 1
 save_points = []
 check_acc_points = []
-num_saves_to_keep = 2
+num_saves_to_keep = 3
 # ---
 
-# Load dataset:
-x_total, y_total = ml.parse_full_data_greyscale('resources/training_mat_data/greyscale_200x200.mat')
-(m, n_H, n_W, n_C) = x_total.shape
-# ---
-
-# Shuffle dataset and get train/test subsets:
-random.seed(69)
-c = list(zip(x_total, y_total))
-random.shuffle(c)
-x_total, y_total = zip(*c)
-
-x_train = x_total[0:350]
-y_train = y_total[0:350]
-
-x_test = x_total[350:]
-y_test = y_total[350:]
-# ---
-
-# Build the graph:
+# Build the graph ---
 X, Y = ml.create_placeholders(n_H, n_W, n_C, 4)
 parameters = ml.initialize_parameters(kernel_shapes, regularization_coefficient)
 Z = ml.forward_propagation(X, parameters, max_pool_shapes)
@@ -63,7 +65,8 @@ optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost, name="optimizer
 init = tf.global_variables_initializer()
 # ---
 
-save_dir = './models/model-0/test_save'
+# Change save_dir to ./models/{model_name}/model
+save_dir = './models/model-0/model'
 saver = tf.train.Saver(max_to_keep=num_saves_to_keep)
 
 with tf.Session() as sess:
@@ -71,7 +74,15 @@ with tf.Session() as sess:
     sess.run(init)
 
     for epoch in range(1, num_epochs + 1):  # epoch starts from 1 cause that makes life easier
-        sess.run(optimizer, feed_dict={X: x_train, Y: y_train})
+        epoch_train_accuracy = 0
+        epoch_test_accuracy = 0
+        epoch_train_accuracies = []
+
+        for x_train_minibatch, y_train_minibatch in ml.get_minibatches(x_train, y_train, minibatch_size):
+            sess.run(optimizer, feed_dict={X: x_train_minibatch, Y: y_train_minibatch})
+
+            if epoch % check_acc_period == 0:
+                epoch_train_accuracies.append(sess.run(accuracy, feed_dict={X: x_train_minibatch, Y: y_train_minibatch}))
 
         if epoch % save_period == 0 or epoch == num_epochs:
             print("Saving:")
@@ -98,9 +109,9 @@ with tf.Session() as sess:
     plt.plot(check_acc_points, np.squeeze(test_accuracies), label="test acc", color='#0000ff')
     for c, i in enumerate(save_points):
         if c == 0:
-            plt.axvline(x=i, label="saved", color="#000000")
+            plt.axvline(x=i, y_min=0, y_max=0.1, label="saved", color="#000000")
         else:
-            plt.axvline(x=i, color="#000000")
+            plt.axvline(x=i, y_min=0, y_max=0.1, color="#000000")
     plt.legend()
 
     plt.xticks(check_acc_points)

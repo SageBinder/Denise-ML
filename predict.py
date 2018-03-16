@@ -7,24 +7,28 @@ import random
 
 print("Path: " + os.path.abspath("./"))
 
-x_total, y_total = ml.parse_full_data_greyscale(os.path.abspath("resources/training_mat_data/greyscale_200x200.mat"))
+# Don't forget to change this path when using new datasets
+x_total, y_total = ml.parse_full_data_greyscale(
+    os.path.abspath("resources/training_mat_data/greyscale_with_artificial_200x200.mat"), 200, 200, 1)
 
 random.seed(69)
 c = list(zip(x_total, y_total))
 random.shuffle(c)
 x_total, y_total = zip(*c)
 
-x_train = x_total[0:350]
-y_train = y_total[0:350]
+x_train = x_total[0:int(0.8 * len(x_total))]
+y_train = y_total[0:int(0.8 * len(y_total))]
 
-x_test = x_total[350:]
-y_test = y_total[350:]
+x_test = x_total[int(0.8 * len(x_total)):]
+y_test = y_total[int(0.8 * len(y_total)):]
 
-image_dir = os.fsencode(os.path.abspath("out/greyscale_200x200_labeled"))
+image_dir = os.fsencode(os.path.abspath("out/greyscale_with_artificial_200x200_labeled"))
+# Change save_dir to point to a different model directory to load different models
 save_dir = os.path.abspath("models/model-0")
 
 with tf.Session(graph=tf.Graph()) as sess:
-    saver = tf.train.import_meta_graph(save_dir + "/test_save-99.meta")
+    saver = tf.train.import_meta_graph(save_dir + "/model-10.meta")  # <-- As of now this line needs to be manually
+    # changed to load the meta graph for each trained model.
     saver.restore(sess, tf.train.latest_checkpoint(save_dir))
     graph = tf.get_default_graph()
 
@@ -39,13 +43,10 @@ with tf.Session(graph=tf.Graph()) as sess:
     print("Train accuracy: " + str(sess.run(accuracy, feed_dict={X: x_train, Y: y_train})))
 
     i = 0
-    for file in os.listdir(image_dir):
-        filename = os.fsdecode(file)
-        image = scipy.misc.imread(os.path.abspath("out/greyscale_200x200_labeled/" + filename))
-
+    for image, label in zip(x_test, y_test):
         Z_arr = sess.run(Z, feed_dict={X: image.reshape((1, 200, 200, 1))})
         print(Z_arr)
-        print(filename)
+
         prediction = np.argmax(Z_arr)
         prediction_str = ""
         if prediction == 0:  # skeletal
@@ -56,14 +57,17 @@ with tf.Session(graph=tf.Graph()) as sess:
             prediction_str = "neural"
         elif prediction == 3:  # muscular
             prediction_str = "muscular"
-        print(prediction_str)
 
-        if prediction_str not in filename:
-            print("OOPS<-----------------------------------------------------------------------------------------\n")
+        actual_str = ml.prediction_num_to_string(np.argmax(label))
+        print("Predicted: " + prediction_str)
+        print("Actual: " + actual_str)
+
+        if prediction_str == actual_str:
+            print("OOPS<-----------------------------------------------------------------------------------------")
+
             scipy.misc.toimage(np.reshape(image, (200, 200)), cmin=0, cmax=255) \
-                .save(os.path.abspath("out/misclassified_greyscale_200x200/[" + str(
-                    i) + "] predicted_" + prediction_str + ", actual_" + filename + ".jpg"))
-        else:
-            print('\n')
+                .save(os.path.abspath(image_dir + "/[" + str(
+                    i) + "] predicted_" + prediction_str + ", actual_" + actual_str + ".jpg"))
 
+        print('\n')
         i += 1
