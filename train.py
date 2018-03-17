@@ -25,13 +25,22 @@ x_test = x_total[int(0.8 * len(x_total)):]
 y_test = y_total[int(0.8 * len(y_total)):]
 
 print("\nTotal data:")
+print("-----------------------------------------------")
+print("Total examples: " + str(m))
 ml.print_num_of_each_class(y_total)
+print("-----------------------------------------------\n")
 
 print("Train data:")
+print("-----------------------------------------------")
+print("Total examples: " + str(len(np.asarray(y_train))))
 ml.print_num_of_each_class(y_train)
+print("-----------------------------------------------\n")
 
 print("Test data:")
+print("-----------------------------------------------")
+print("Total examples: " + str(len(np.asarray(y_test))))
 ml.print_num_of_each_class(y_test)
+print("-----------------------------------------------\n")
 # ---
 
 # Hyperparameters ---

@@ -99,4 +99,4 @@ def print_num_of_each_class(y):
         (total_respiratory_examples / m) * 100) + "%)")
     print("Neural examples: " + str(int(total_neural_examples)) + " (" + str((total_neural_examples / m) * 100) + "%)")
     print("Muscular examples: " + str(int(total_muscular_examples)) + " (" + str(
-        (total_muscular_examples / m) * 100) + "%)\n")
+        (total_muscular_examples / m) * 100) + "%)")
