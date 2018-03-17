@@ -93,6 +93,13 @@ with tf.Session() as sess:
             if epoch % check_model_period == 0:
                 minibatch_train_scores.append(sess.run(F1_score, feed_dict={X: x_train_minibatch, Y: y_train_minibatch}))
 
+        if epoch % save_period == 0 or epoch == num_epochs:
+            print("Saving:")
+            saver.save(sess, save_dir, global_step=epoch)
+            save_points.append(epoch)
+            if len(save_points) > num_saves_to_keep:
+                save_points.pop(0)
+
         if epoch % check_model_period == 0:
             for x_test_minibatch, y_test_minibatch in ml.get_minibatches(x_test, y_test, minibatch_size,
                                                                          shuffle=True, drop_extra_examples=True):
@@ -109,12 +116,6 @@ with tf.Session() as sess:
             print("Epoch " + str(epoch) + ", current train F1 score: " + str(train_score) +
                   ", current test F1 score: " + str(test_score))
 
-        if epoch % save_period == 0 or epoch == num_epochs:
-            print("Saving:")
-            saver.save(sess, save_dir, global_step=epoch)
-            save_points.append(epoch)
-            if len(save_points) > num_saves_to_keep:
-                save_points.pop(0)
         else:
             print("Epoch " + str(epoch))
 
@@ -122,9 +123,9 @@ with tf.Session() as sess:
     plt.plot(check_model_points, np.squeeze(test_scores), label="test F1", color='#0000ff')
     for c, i in enumerate(save_points):
         if c == 0:
-            plt.axvline(x=i, y_min=0, y_max=0.1, label="saved", color="#000000")
+            plt.axvline(x=i, ymin=0, ymax=0.1, label="saved", color="#000000")
         else:
-            plt.axvline(x=i, y_min=0, y_max=0.1, color="#000000")
+            plt.axvline(x=i, ymin=0, ymax=0.1, color="#000000")
     plt.legend()
 
     plt.xticks(check_model_points)
