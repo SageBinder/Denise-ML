@@ -81,3 +81,22 @@ def get_minibatches(x, y, batch_size, shuffle=True, drop_extra_examples=False):
         yield x[excerpt], y[excerpt]
     if m % batch_size != 0 and not drop_extra_examples:
         yield x[m - (m % batch_size):], y[m - (m % batch_size):]
+
+
+def print_num_of_each_class(y):
+    m = len(y)
+    (total_skeletal_examples,
+     total_respiratory_examples,
+     total_neural_examples,
+     total_muscular_examples) \
+        = (sum(row[0] for row in np.asarray(y)),
+           sum(row[1] for row in np.asarray(y)),
+           sum(row[2] for row in np.asarray(y)),
+           sum(row[3] for row in np.asarray(y)))
+    print("Skeletal examples: " + str(int(total_skeletal_examples)) + " (" + str(
+        (total_skeletal_examples / m) * 100) + "%)")
+    print("Respiratory examples: " + str(int(total_respiratory_examples)) + " (" + str(
+        (total_respiratory_examples / m) * 100) + "%)")
+    print("Neural examples: " + str(int(total_neural_examples)) + " (" + str((total_neural_examples / m) * 100) + "%)")
+    print("Muscular examples: " + str(int(total_muscular_examples)) + " (" + str(
+        (total_muscular_examples / m) * 100) + "%)\n")
