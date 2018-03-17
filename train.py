@@ -6,11 +6,49 @@ import random
 
 print(tf.__version__)
 
-# Hyperparameters:
+# Load dataset ---
+x_total, y_total = ml.parse_full_data_greyscale('resources/training_mat_data/greyscale_with_artificial_200x200.mat'
+                                                , 200, 200, 1)
+(m, n_H, n_W, n_C) = x_total.shape
+# ---
+
+# Shuffle dataset and get train/test subsets ---
+random.seed(69)
+c = list(zip(x_total, y_total))
+random.shuffle(c)
+x_total, y_total = zip(*c)
+
+x_train = x_total[0:int(0.8 * len(x_total))]
+y_train = y_total[0:int(0.8 * len(y_total))]
+# Train/test split is 80/20
+x_test = x_total[int(0.8 * len(x_total)):]
+y_test = y_total[int(0.8 * len(y_total)):]
+
+print("\nTotal data:")
+print("-----------------------------------------------")
+print("Total examples: " + str(m))
+ml.print_num_of_each_class(y_total)
+print("-----------------------------------------------\n")
+
+print("Train data:")
+print("-----------------------------------------------")
+print("Total examples: " + str(len(np.asarray(y_train))))
+ml.print_num_of_each_class(y_train)
+print("-----------------------------------------------\n")
+
+print("Test data:")
+print("-----------------------------------------------")
+print("Total examples: " + str(len(np.asarray(y_test))))
+ml.print_num_of_each_class(y_test)
+print("-----------------------------------------------\n")
+# ---
+
+# Hyperparameters ---
 learning_rate = 0.003
 regularization_coefficient = 0.12
-num_epochs = 10  # num_epochs should be a multiple of save_period to
+num_epochs = 3  # num_epochs should be a multiple of save_period to
 # ensure the distance between save points remains constant.
+minibatch_size = 100
 
 kernel_shapes = {"L1": [15, 15, 1, 19],
                  "L2": [9, 9, 19, 21],
@@ -21,35 +59,17 @@ max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
                    "L3": ([1, 3, 3, 1], "SAME")}
 # ---
 
-# Variables for keeping track of training:
-train_accuracies = []
-test_accuracies = []
-save_period = 2
-check_acc_period = 1
+# Variables for keeping track of training ---
+train_scores = []
+test_scores = []
+save_period = 1
+evaluate_model_period = 1
 save_points = []
-check_acc_points = []
-num_saves_to_keep = 2
+check_model_points = []
+num_saves_to_keep = 3
 # ---
 
-# Load dataset:
-x_total, y_total = ml.parse_full_data_greyscale('resources/training_mat_data/greyscale_200x200.mat')
-(m, n_H, n_W, n_C) = x_total.shape
-# ---
-
-# Shuffle dataset and get train/test subsets:
-random.seed(69)
-c = list(zip(x_total, y_total))
-random.shuffle(c)
-x_total, y_total = zip(*c)
-
-x_train = x_total[0:350]
-y_train = y_total[0:350]
-
-x_test = x_total[350:]
-y_test = y_total[350:]
-# ---
-
-# Build the graph:
+# Build the graph ---
 X, Y = ml.create_placeholders(n_H, n_W, n_C, 4)
 parameters = ml.initialize_parameters(kernel_shapes, regularization_coefficient)
 Z = ml.forward_propagation(X, parameters, max_pool_shapes)
@@ -63,7 +83,8 @@ optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost, name="optimizer
 init = tf.global_variables_initializer()
 # ---
 
-save_dir = './models/model-0/test_save'
+# Change save_dir to ./models/{model_name}/model
+save_dir = './models/model-0/model'
 saver = tf.train.Saver(max_to_keep=num_saves_to_keep)
 
 with tf.Session() as sess:
@@ -71,7 +92,17 @@ with tf.Session() as sess:
     sess.run(init)
 
     for epoch in range(1, num_epochs + 1):  # epoch starts from 1 cause that makes life easier
-        sess.run(optimizer, feed_dict={X: x_train, Y: y_train})
+        minibatch_train_accuracies = []
+        minibatch_test_accuracies = []
+
+        # Gets train minibatches, runs the optimizer, and saves accuracy of minibatch
+        for x_train_minibatch, y_train_minibatch in ml.get_minibatches(x_train, y_train, minibatch_size,
+                                                                       shuffle=True, drop_extra_examples=True):
+            sess.run(optimizer, feed_dict={X: x_train_minibatch, Y: y_train_minibatch})
+
+            if epoch % evaluate_model_period == 0:
+                minibatch_train_accuracies.append(sess.run(accuracy,
+                                                           feed_dict={X: x_train_minibatch, Y: y_train_minibatch}))
 
         if epoch % save_period == 0 or epoch == num_epochs:
             print("Saving:")
@@ -80,32 +111,37 @@ with tf.Session() as sess:
             if len(save_points) > num_saves_to_keep:
                 save_points.pop(0)
 
-        if epoch % check_acc_period == 0:
-            train_accuracy = sess.run(accuracy, feed_dict={X: x_train, Y: y_train})
-            test_accuracy = sess.run(accuracy, feed_dict={X: x_test, Y: y_test})
+        if epoch % evaluate_model_period == 0:
+            for x_test_minibatch, y_test_minibatch in ml.get_minibatches(x_test, y_test, minibatch_size,
+                                                                         shuffle=True, drop_extra_examples=True):
+                minibatch_test_accuracies.append(sess.run(accuracy,
+                                                          feed_dict={X: x_test_minibatch, Y: y_test_minibatch}))
 
-            train_accuracies.append(train_accuracy)
-            test_accuracies.append(test_accuracy)
+            epoch_train_accuracy = np.sum(minibatch_train_accuracies) / len(minibatch_train_accuracies)
+            train_scores.append(epoch_train_accuracy)
 
-            check_acc_points.append(epoch)
+            epoch_test_accuracy = np.sum(minibatch_test_accuracies) / len(minibatch_test_accuracies)
+            test_scores.append(epoch_test_accuracy)
 
-            print("Epoch " + str(epoch) + ", current train acc: " + str(train_accuracy) +
-                  ", current test acc: " + str(test_accuracy))
+            check_model_points.append(epoch)
+
+            print("Epoch " + str(epoch) + ", current train accuracy: " + str(epoch_train_accuracy) +
+                  ", current test accuracy: " + str(epoch_test_accuracy))
         else:
             print("Epoch " + str(epoch))
 
-    plt.plot(check_acc_points, np.squeeze(train_accuracies), label="train acc", color="#ff0000")
-    plt.plot(check_acc_points, np.squeeze(test_accuracies), label="test acc", color='#0000ff')
+    plt.plot(check_model_points, np.squeeze(train_scores), label="train acc", color="#ff0000")
+    plt.plot(check_model_points, np.squeeze(test_scores), label="test acc", color='#0000ff')
     for c, i in enumerate(save_points):
         if c == 0:
-            plt.axvline(x=i, label="saved", color="#000000")
+            plt.axvline(x=i, ymin=0, ymax=0.1, label="saved", color="#000000")
         else:
-            plt.axvline(x=i, color="#000000")
+            plt.axvline(x=i, ymin=0, ymax=0.1, color="#000000")
     plt.legend()
 
-    plt.xticks(check_acc_points)
-    plt.ylabel('accuracy')
-    plt.xlabel('iterations')
+    plt.xticks(check_model_points)
+    plt.ylabel('Accuracy')
+    plt.xlabel('Iterations')
     plt.title("Epochs: " + str(num_epochs)
               + "\nLearning rate: " + str(learning_rate)
               + "\nRegularization: " + str(regularization_coefficient))
