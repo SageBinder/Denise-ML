@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import random
 
 
 def create_placeholders(n_h, n_w, n_c, n_y):
@@ -65,11 +66,18 @@ def prediction_num_to_string(y):
         return "muscular"
 
 
-def get_minibatches(x, y, batch_size):
+def get_minibatches(x, y, batch_size, shuffle=True, drop_extra_examples=False):
     m = np.shape(x)[0]
     assert m == np.shape(y)[0]
+
+    if shuffle:
+        random.seed(69)
+        c = list(zip(x, y))
+        random.shuffle(c)
+        x, y = zip(*c)
 
     for i in range(0, m - batch_size + 1, batch_size):
         excerpt = slice(i, i + batch_size)
         yield x[excerpt], y[excerpt]
-    yield x[m - (m % batch_size):], y[m - (m % batch_size):]
+    if m % batch_size != 0 and not drop_extra_examples:
+        yield x[m - (m % batch_size):], y[m - (m % batch_size):]

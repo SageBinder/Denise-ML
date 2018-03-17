@@ -42,12 +42,12 @@ max_pool_shapes = {"L1": ([1, 5, 5, 1], "SAME"),
 # ---
 
 # Variables for keeping track of training ---
-train_accuracies = []
-test_accuracies = []
+train_scores = []
+test_scores = []
 save_period = 1
-check_acc_period = 1
+check_model_period = 1
 save_points = []
-check_acc_points = []
+check_model_points = []
 num_saves_to_keep = 3
 # ---
 
@@ -57,12 +57,19 @@ parameters = ml.initialize_parameters(kernel_shapes, regularization_coefficient)
 Z = ml.forward_propagation(X, parameters, max_pool_shapes)
 cost = ml.get_cost(Z, Y)
 
-predict_op = tf.argmax(Z, axis=1)
-correct_prediction = tf.equal(predict_op, tf.argmax(Y, axis=1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name="accuracy")
+prediction = tf.argmax(Z, axis=1)
+# correct_predictions = tf.equal(prediction, tf.argmax(Y, axis=1))
+# accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
+
+# Z_one_hot = tf.one_hot(prediction, 4, axis=1)
+precision = tf.metrics.precision(prediction, tf.argmax(Y, axis=1), name="precision")
+recall = tf.metrics.recall(prediction, tf.argmax(Y, axis=1), name="recall")
+F1_score = tf.divide(tf.multiply(tf.cast(2, dtype=tf.float32), tf.multiply(precision, recall)), tf.add(precision, recall))
 
 optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost, name="optimizer")
 init = tf.global_variables_initializer()
+precision_init = tf.variables_initializer(tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope="precision"))
+recall_init = tf.variables_initializer(tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope="recall"))
 # ---
 
 # Change save_dir to ./models/{model_name}/model
@@ -72,17 +79,35 @@ saver = tf.train.Saver(max_to_keep=num_saves_to_keep)
 with tf.Session() as sess:
     tf.set_random_seed(69)
     sess.run(init)
+    sess.run(precision_init)
+    sess.run(recall_init)
 
     for epoch in range(1, num_epochs + 1):  # epoch starts from 1 cause that makes life easier
-        epoch_train_accuracy = 0
-        epoch_test_accuracy = 0
-        epoch_train_accuracies = []
+        minibatch_train_scores = []
+        minibatch_test_scores = []
 
-        for x_train_minibatch, y_train_minibatch in ml.get_minibatches(x_train, y_train, minibatch_size):
+        for x_train_minibatch, y_train_minibatch in ml.get_minibatches(x_train, y_train, minibatch_size,
+                                                                       shuffle=True, drop_extra_examples=True):
             sess.run(optimizer, feed_dict={X: x_train_minibatch, Y: y_train_minibatch})
 
-            if epoch % check_acc_period == 0:
-                epoch_train_accuracies.append(sess.run(accuracy, feed_dict={X: x_train_minibatch, Y: y_train_minibatch}))
+            if epoch % check_model_period == 0:
+                minibatch_train_scores.append(sess.run(F1_score, feed_dict={X: x_train_minibatch, Y: y_train_minibatch}))
+
+        if epoch % check_model_period == 0:
+            for x_test_minibatch, y_test_minibatch in ml.get_minibatches(x_test, y_test, minibatch_size,
+                                                                         shuffle=True, drop_extra_examples=True):
+                minibatch_test_scores.append(sess.run(F1_score, feed_dict={X: x_test_minibatch, Y: y_test_minibatch}))
+
+            train_score = np.sum(minibatch_train_scores) / len(minibatch_train_scores)
+            train_scores.append(train_score)
+
+            test_score = np.sum(minibatch_test_scores) / len(minibatch_test_scores)
+            test_scores.append(test_score)
+
+            check_model_points.append(epoch)
+
+            print("Epoch " + str(epoch) + ", current train F1 score: " + str(train_score) +
+                  ", current test F1 score: " + str(test_score))
 
         if epoch % save_period == 0 or epoch == num_epochs:
             print("Saving:")
@@ -90,23 +115,11 @@ with tf.Session() as sess:
             save_points.append(epoch)
             if len(save_points) > num_saves_to_keep:
                 save_points.pop(0)
-
-        if epoch % check_acc_period == 0:
-            train_accuracy = sess.run(accuracy, feed_dict={X: x_train, Y: y_train})
-            test_accuracy = sess.run(accuracy, feed_dict={X: x_test, Y: y_test})
-
-            train_accuracies.append(train_accuracy)
-            test_accuracies.append(test_accuracy)
-
-            check_acc_points.append(epoch)
-
-            print("Epoch " + str(epoch) + ", current train acc: " + str(train_accuracy) +
-                  ", current test acc: " + str(test_accuracy))
         else:
             print("Epoch " + str(epoch))
 
-    plt.plot(check_acc_points, np.squeeze(train_accuracies), label="train acc", color="#ff0000")
-    plt.plot(check_acc_points, np.squeeze(test_accuracies), label="test acc", color='#0000ff')
+    plt.plot(check_model_points, np.squeeze(train_scores), label="train F1", color="#ff0000")
+    plt.plot(check_model_points, np.squeeze(test_scores), label="test F1", color='#0000ff')
     for c, i in enumerate(save_points):
         if c == 0:
             plt.axvline(x=i, y_min=0, y_max=0.1, label="saved", color="#000000")
@@ -114,8 +127,8 @@ with tf.Session() as sess:
             plt.axvline(x=i, y_min=0, y_max=0.1, color="#000000")
     plt.legend()
 
-    plt.xticks(check_acc_points)
-    plt.ylabel('accuracy')
+    plt.xticks(check_model_points)
+    plt.ylabel('F1 score')
     plt.xlabel('iterations')
     plt.title("Epochs: " + str(num_epochs)
               + "\nLearning rate: " + str(learning_rate)
