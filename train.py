@@ -58,10 +58,6 @@ Z = ml.forward_propagation(X, parameters, max_pool_shapes)
 cost = ml.get_cost(Z, Y)
 
 prediction = tf.argmax(Z, axis=1)
-# correct_predictions = tf.equal(prediction, tf.argmax(Y, axis=1))
-# accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
-
-# Z_one_hot = tf.one_hot(prediction, 4, axis=1)
 precision = tf.metrics.precision(prediction, tf.argmax(Y, axis=1), name="precision")
 recall = tf.metrics.recall(prediction, tf.argmax(Y, axis=1), name="recall")
 F1_score = tf.divide(tf.multiply(tf.cast(2, dtype=tf.float32), tf.multiply(precision, recall)), tf.add(precision, recall))
@@ -86,12 +82,13 @@ with tf.Session() as sess:
         minibatch_train_scores = []
         minibatch_test_scores = []
 
+        # Gets train minibatches, runs the optimizer, and saves F1 score of minibatch
         for x_train_minibatch, y_train_minibatch in ml.get_minibatches(x_train, y_train, minibatch_size,
                                                                        shuffle=True, drop_extra_examples=True):
             sess.run(optimizer, feed_dict={X: x_train_minibatch, Y: y_train_minibatch})
 
             if epoch % check_model_period == 0:
-                minibatch_train_scores.append(sess.run(F1_score, feed_dict={X: x_train_minibatch, Y: y_train_minibatch}))
+                minibatch_train_scores.append(sess.run(F1_score, feed_dict={X: x_train_minibatch, Y: y_train_minibatch})[1])
 
         if epoch % save_period == 0 or epoch == num_epochs:
             print("Saving:")
@@ -103,7 +100,7 @@ with tf.Session() as sess:
         if epoch % check_model_period == 0:
             for x_test_minibatch, y_test_minibatch in ml.get_minibatches(x_test, y_test, minibatch_size,
                                                                          shuffle=True, drop_extra_examples=True):
-                minibatch_test_scores.append(sess.run(F1_score, feed_dict={X: x_test_minibatch, Y: y_test_minibatch}))
+                minibatch_test_scores.append(sess.run(F1_score, feed_dict={X: x_test_minibatch, Y: y_test_minibatch})[1])
 
             train_score = np.sum(minibatch_train_scores) / len(minibatch_train_scores)
             train_scores.append(train_score)
